@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\KafkaPay.Shared.Application\KafkaPay.Shared.Application.csproj" />
+    <ProjectReference Include="..\KafkaPay.Shared.Domain\KafkaPay.Shared.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

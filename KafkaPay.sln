@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -13,25 +13,21 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.TransferService.AP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.TransferService.Application", "KafkaPay.TransferService.Application\KafkaPay.TransferService.Application.csproj", "{A78E6444-A513-4474-8FDE-EFB3C191FA62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.TransferService.Domain", "KafkaPay.TransferService.Domain\KafkaPay.TransferService.Domain.csproj", "{71572006-FB6D-46D0-A579-B3FABB8FF639}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KafkaPay.AccountingService", "KafkaPay.AccountingService", "{5B619A45-00D7-42C8-A4FC-283895832A8C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.AccountingService.API", "KafkaPay.AccountingService.API\KafkaPay.AccountingService.API.csproj", "{B267A731-37EB-46B3-8088-00627E4E0449}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.AccountingService.Application", "KafkaPay.AccountingService.Application\KafkaPay.AccountingService.Application.csproj", "{E8D83CC2-2295-444C-BCD6-52F9499C40EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.AccountingService.Infrastructure", "KafkaPay.AccountingService.Infrastructure\KafkaPay.AccountingService.Infrastructure.csproj", "{DE672DBB-6133-450D-BCB0-517384B5B844}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.AccountingService.Domain", "KafkaPay.AccountingService.Domain\KafkaPay.AccountingService.Domain.csproj", "{49F8035D-7C66-4CAA-B371-660FA77E15A3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.TransferService.Infrastructure", "KafkaPay.TransferService.Infrastructure\KafkaPay.TransferService.Infrastructure.csproj", "{34002F33-27EF-4006-B734-579C38A5E14F}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BackgroundJobs", "BackgroundJobs", "{6A4B793C-193D-446D-BA68-3B8AB04F6C2B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.BackgroundJobs", "BackgroundJobs\KafkaPay.BackgroundJobs\KafkaPay.BackgroundJobs.csproj", "{65854581-3E85-B9B4-DEE5-31795C5E9C9C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.Shared.Domain", "KafkaPay.Shared.Domain\KafkaPay.Shared.Domain.csproj", "{F2F306F9-F56B-4F4C-9D49-B1002CE617B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.Shared.Infrastructure", "KafkaPay.Shared.Infrastructure\KafkaPay.Shared.Infrastructure.csproj", "{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.Shared.Application", "KafkaPay.Shared.Application\KafkaPay.Shared.Application.csproj", "{109BAF5C-7961-4CD3-964B-C0B173CC8176}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,10 +43,6 @@ Global
 		{A78E6444-A513-4474-8FDE-EFB3C191FA62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A78E6444-A513-4474-8FDE-EFB3C191FA62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A78E6444-A513-4474-8FDE-EFB3C191FA62}.Release|Any CPU.Build.0 = Release|Any CPU
-		{71572006-FB6D-46D0-A579-B3FABB8FF639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{71572006-FB6D-46D0-A579-B3FABB8FF639}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{71572006-FB6D-46D0-A579-B3FABB8FF639}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{71572006-FB6D-46D0-A579-B3FABB8FF639}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B267A731-37EB-46B3-8088-00627E4E0449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B267A731-37EB-46B3-8088-00627E4E0449}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B267A731-37EB-46B3-8088-00627E4E0449}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -59,18 +51,6 @@ Global
 		{E8D83CC2-2295-444C-BCD6-52F9499C40EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8D83CC2-2295-444C-BCD6-52F9499C40EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8D83CC2-2295-444C-BCD6-52F9499C40EF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE672DBB-6133-450D-BCB0-517384B5B844}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE672DBB-6133-450D-BCB0-517384B5B844}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE672DBB-6133-450D-BCB0-517384B5B844}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE672DBB-6133-450D-BCB0-517384B5B844}.Release|Any CPU.Build.0 = Release|Any CPU
-		{49F8035D-7C66-4CAA-B371-660FA77E15A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{49F8035D-7C66-4CAA-B371-660FA77E15A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{49F8035D-7C66-4CAA-B371-660FA77E15A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{49F8035D-7C66-4CAA-B371-660FA77E15A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{34002F33-27EF-4006-B734-579C38A5E14F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{34002F33-27EF-4006-B734-579C38A5E14F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{34002F33-27EF-4006-B734-579C38A5E14F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{34002F33-27EF-4006-B734-579C38A5E14F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{65854581-3E85-B9B4-DEE5-31795C5E9C9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{65854581-3E85-B9B4-DEE5-31795C5E9C9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65854581-3E85-B9B4-DEE5-31795C5E9C9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -79,6 +59,14 @@ Global
 		{F2F306F9-F56B-4F4C-9D49-B1002CE617B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2F306F9-F56B-4F4C-9D49-B1002CE617B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2F306F9-F56B-4F4C-9D49-B1002CE617B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{109BAF5C-7961-4CD3-964B-C0B173CC8176}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{109BAF5C-7961-4CD3-964B-C0B173CC8176}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{109BAF5C-7961-4CD3-964B-C0B173CC8176}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{109BAF5C-7961-4CD3-964B-C0B173CC8176}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -87,15 +75,13 @@ Global
 		{A97ECE81-9799-4102-834A-2E9C8FB35B61} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{778BC725-413F-4EEB-9D72-13F08C5074B8} = {A97ECE81-9799-4102-834A-2E9C8FB35B61}
 		{A78E6444-A513-4474-8FDE-EFB3C191FA62} = {A97ECE81-9799-4102-834A-2E9C8FB35B61}
-		{71572006-FB6D-46D0-A579-B3FABB8FF639} = {A97ECE81-9799-4102-834A-2E9C8FB35B61}
 		{5B619A45-00D7-42C8-A4FC-283895832A8C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{B267A731-37EB-46B3-8088-00627E4E0449} = {5B619A45-00D7-42C8-A4FC-283895832A8C}
 		{E8D83CC2-2295-444C-BCD6-52F9499C40EF} = {5B619A45-00D7-42C8-A4FC-283895832A8C}
-		{DE672DBB-6133-450D-BCB0-517384B5B844} = {5B619A45-00D7-42C8-A4FC-283895832A8C}
-		{49F8035D-7C66-4CAA-B371-660FA77E15A3} = {5B619A45-00D7-42C8-A4FC-283895832A8C}
-		{34002F33-27EF-4006-B734-579C38A5E14F} = {A97ECE81-9799-4102-834A-2E9C8FB35B61}
 		{65854581-3E85-B9B4-DEE5-31795C5E9C9C} = {6A4B793C-193D-446D-BA68-3B8AB04F6C2B}
 		{F2F306F9-F56B-4F4C-9D49-B1002CE617B8} = {5719A5CD-60A1-4A2D-B73F-3AAD5F5B81A6}
+		{6474E9C3-C4A8-4B24-9B01-BB5A210E6B1B} = {5719A5CD-60A1-4A2D-B73F-3AAD5F5B81A6}
+		{109BAF5C-7961-4CD3-964B-C0B173CC8176} = {5719A5CD-60A1-4A2D-B73F-3AAD5F5B81A6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F588F94-0F42-41CA-8190-30B0D5548C0F}
