@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using KafkaPay.Shared.Application.Common.Interfaces;
 using KafkaPay.Shared.Domain.Entities;
+using KafkaPay.Shared.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace KafkaPay.Shared.Infrastructure.Data
@@ -17,6 +18,8 @@ namespace KafkaPay.Shared.Infrastructure.Data
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new TnxTransactionConfiguration());
+
             base.OnModelCreating(modelBuilder);
         }
 

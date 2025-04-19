@@ -17,7 +17,7 @@ namespace KafkaPay.Shared.Infrastructure
     {
         public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
         {
-            var connectionString = builder.Configuration.GetConnectionString("DbConnection");
+            var connectionString = builder.Configuration.GetConnectionString("Default");
 
 
             builder.Services.AddDbContext<ApplicationDbContext>((sp, options) => {

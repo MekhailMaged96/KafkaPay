@@ -11,10 +11,12 @@ namespace KafkaPay.Shared.Domain.Entities
 {
     public class TnxTransaction : BaseAuditableEntity<Guid>
     {
-        public Guid FromAccountId { get; set; }
-        public Guid ToAccountId { get; set; }
+        public string TransactionCode { get; protected set; }
+        public Guid? FromAccountId { get; set; }
+        public Guid? ToAccountId { get; set; }
         public decimal Amount { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string ReferenceNumber { get; protected set; }
 
         public int StatusId { get; set; }
         [ForeignKey(nameof(StatusId))]
