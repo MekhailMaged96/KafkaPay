@@ -1,0 +1,6 @@
+@KafkaPay.TransferService.API_HostAddress = http://localhost:5118
+
+GET {{KafkaPay.TransferService.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
