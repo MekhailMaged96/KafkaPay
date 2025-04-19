@@ -27,11 +27,11 @@ namespace KafkaPay.TransferService.Application.Features.Commands.CompleteTransfe
                 .Include(t => t.ToAccount)
                 .FirstOrDefaultAsync(t => t.Id == request.TransactionId);
 
-            if (txn == null || txn.Status != TnxTransactionStatus.Pending)
+            if (txn == null || txn.StatusId !=(int)TnxTransactionStatusEnum.Pending)
                 return false;
 
             txn.ToAccount.Balance += txn.Amount;
-            txn.Status = TnxTransactionStatus.Completed;
+            txn.StatusId = (int)TnxTransactionStatusEnum.Completed;
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;

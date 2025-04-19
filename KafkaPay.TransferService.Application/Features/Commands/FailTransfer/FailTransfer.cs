@@ -27,14 +27,14 @@ namespace KafkaPay.TransferService.Application.Features.Commands.FailTransfer
                 .Include(t => t.FromAccount)
                 .FirstOrDefaultAsync(t => t.Id == request.TransactionId);
 
-            if (txn == null || txn.Status != TnxTransactionStatus.Pending)
+            if (txn == null || txn.StatusId != (int)TnxTransactionStatusEnum.Pending)
                 return false;
 
             // Refund the source account
             txn.FromAccount.Balance += txn.Amount;
 
             // Mark the transaction as failed
-            txn.Status = TnxTransactionStatus.Failed;
+            txn.StatusId = (int)TnxTransactionStatusEnum.Failed;
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;

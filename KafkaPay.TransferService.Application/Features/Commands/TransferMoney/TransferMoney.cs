@@ -42,7 +42,7 @@ namespace KafkaPay.TransferService.Application.Features.Commands.TransferMoney
                 FromAccountId = request.FromAccountId,
                 ToAccountId = request.ToAccountId,
                 Amount = request.Amount,
-                Status = TnxTransactionStatus.Pending,
+                StatusId = (int)TnxTransactionStatusEnum.Pending,
                 Timestamp = DateTime.UtcNow
             };
 

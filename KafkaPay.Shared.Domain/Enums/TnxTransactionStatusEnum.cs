@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace KafkaPay.Shared.Domain.Enums
 {
-    public enum TnxTransactionStatus
+    public enum TnxTransactionStatusEnum
     {
         Pending,
         Completed,
-        Failed
+        Failed,
+        Cancelled,
     }
 }
