@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KafkaPay.Shared.Domain.Common
 {
-    public abstract class BaseAuditableEntity<T> : BaseEntity<T>
+    public abstract class BaseAuditableEntity<T> : BaseEntity<T>,IAuditableEntity
     {
         public DateTimeOffset Created { get; set; }
 

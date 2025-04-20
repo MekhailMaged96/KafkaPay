@@ -1,3 +1,4 @@
+using KafkaPay.AccountingService.Application;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 
@@ -11,6 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
+builder.AddAccountApplicationServices();
 
 var app = builder.Build();
 

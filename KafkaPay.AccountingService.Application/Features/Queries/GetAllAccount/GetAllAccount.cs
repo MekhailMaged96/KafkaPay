@@ -12,7 +12,6 @@ namespace KafkaPay.AccountingService.Application.Features.Queries.GetAllAccount
 {
     public record class GetAllAccountQuery() : IRequest<List<AccountDto>>
     {
-        public Guid AccountId { get; set; }
     };
 
     public class GetAllAccountQueryHandler : IRequestHandler<GetAllAccountQuery, List<AccountDto>>

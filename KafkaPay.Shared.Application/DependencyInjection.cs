@@ -16,7 +16,7 @@ namespace KafkaPay.Shared.Application
             builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             builder.Services.AddMediatR(cfg => {
-                cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+                cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
                 cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
             });
         }

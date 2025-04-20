@@ -8,7 +8,7 @@ namespace KafkaPay.Shared.Domain.Enums
 {
     public enum TnxTransactionStatusEnum
     {
-        Pending,
+        Pending=1,
         Completed,
         Failed,
         Cancelled,

@@ -19,12 +19,7 @@ namespace KafkaPay.AccountingService.API.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("CreateUser")]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
+   
 
         [HttpPost("CreateAccount")]
         public async Task<IActionResult> CreateAccount([FromBody] CreateAccountCommand command)
@@ -41,7 +36,7 @@ namespace KafkaPay.AccountingService.API.Controllers
         }
 
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAll(Guid id)
+        public async Task<IActionResult> GetAll()
         {
             var result = await _mediator.Send(new GetAllAccountQuery());
             return Ok(result);
