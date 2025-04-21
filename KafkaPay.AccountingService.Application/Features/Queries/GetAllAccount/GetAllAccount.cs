@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using KafkaPay.AccountingService.Application.DTOS;
 using KafkaPay.Shared.Application.Common.Interfaces;
 using MediatR;
@@ -18,9 +19,11 @@ namespace KafkaPay.AccountingService.Application.Features.Queries.GetAllAccount
     {
         private readonly IApplicationDbContext _context;
 
+
         public GetAllAccountQueryHandler(IApplicationDbContext context)
         {
             _context = context;
+      
         }
         public async Task<List<AccountDto>> Handle(GetAllAccountQuery request, CancellationToken cancellationToken)
         {
@@ -35,6 +38,7 @@ namespace KafkaPay.AccountingService.Application.Features.Queries.GetAllAccount
                 })
                 .ToList();
         }
+       
     }
     
 }

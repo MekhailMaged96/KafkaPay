@@ -24,8 +24,8 @@ namespace KafkaPay.Shared.Infrastructure
 
             builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
-            builder.Services.AddScoped<IKafkaConsumer, KafkaConsumer>();
-            builder.Services.AddScoped<IKafkaProducer, KafkaProducer>();
+            builder.Services.AddScoped(typeof(IKafkaProducer<>), typeof(KafkaProducer<>));
+            builder.Services.AddScoped(typeof(IKafkaConsumer<>), typeof(KafkaConsumer<>));
 
             builder.Services.AddDbContext<ApplicationDbContext>((sp, options) => {
                 var interceptor = sp.GetRequiredService<ISaveChangesInterceptor>();

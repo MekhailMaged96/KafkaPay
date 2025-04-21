@@ -39,5 +39,7 @@ namespace KafkaPay.Shared.Infrastructure.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Account> Accounts => Set<Account>();
         public DbSet<TnxTransaction> TnxTransactions => Set<TnxTransaction>();
+        public DbSet<TransactionStatus> TransactionStatuses => Set<TransactionStatus>();
+        public DbSet<OutBoxMessage> OutBoxMessages => Set<OutBoxMessage>();
     }
 }

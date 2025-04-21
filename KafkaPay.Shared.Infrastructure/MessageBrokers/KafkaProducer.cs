@@ -5,29 +5,31 @@ using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Interfaces;
+using Newtonsoft.Json;
 
 namespace KafkaPay.Shared.Infrastructure.MessageBrokers
 {
-    public class KafkaProducer : IKafkaProducer
+    public class KafkaProducer<T> : IKafkaProducer<T>
     {
-        private readonly IProducer<string, string> _producer;
+        private readonly IProducer<Null, string> _producer;
 
-        public KafkaProducer(string brokerList)
+        public KafkaProducer()
         {
-            var config = new ProducerConfig { BootstrapServers = brokerList };
-            _producer = new ProducerBuilder<string, string>(config).Build();
+            var config = new ProducerConfig { BootstrapServers = "localhost:9092", };
+            _producer = new ProducerBuilder<Null, string>(config).Build();
         }
 
-        public async Task ProduceAsync(string topic, string message)
+        public async Task ProduceAsync(string topic, T message)
         {
             try
             {
-                await _producer.ProduceAsync(topic, new Message<string, string> { Key = null, Value = message });
+                var serializedMessage = JsonConvert.SerializeObject(message);
+                var deliveryResult = await _producer.ProduceAsync(topic, new Message<Null, string> { Value = serializedMessage });
+                Console.WriteLine($"Delivered '{deliveryResult.Value}' to '{deliveryResult.TopicPartitionOffset}'");
             }
-            catch (ProduceException<string, string> e)
+            catch (ProduceException<Null, string> e)
             {
-                // Handle error
-                Console.WriteLine($"Error producing message: {e.Message}");
+                Console.WriteLine($"Error producing message: {e.Error.Reason}");
             }
         }
     }

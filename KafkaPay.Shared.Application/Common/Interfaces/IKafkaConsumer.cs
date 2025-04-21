@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 
 namespace KafkaPay.Shared.Application.Common.Interfaces
 {
-    public interface IKafkaConsumer
+    public interface IKafkaConsumer<TKey, TValue>
     {
-        Task ConsumeAsync(string topic, CancellationToken cancellationToken);
+        void Subscribe(string topic);
+        ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken);
+        void Close();
+
     }
 }
