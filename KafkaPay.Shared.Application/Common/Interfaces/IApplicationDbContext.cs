@@ -13,6 +13,8 @@ namespace KafkaPay.Shared.Application.Common.Interfaces
         public DbSet<User> Users { get;}
         public DbSet<Account> Accounts { get; }
         public DbSet<TnxTransaction> TnxTransactions { get;  }
+        public DbSet<OutBoxMessage> OutBoxMessages { get; }
+
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Hangfire;
 using KafkaPay.BackgroundJobs.Services;
+using KafkaPay.Shared.Infrastructure.Backgrounds.Jobs;
 
 namespace KafkaPay.BackgroundJobs.Jobs
 {
@@ -23,7 +24,11 @@ namespace KafkaPay.BackgroundJobs.Jobs
                 "daily-report-job",
                 service => service.ProcessDailyReportAsync(),
                 Cron.Minutely);
-        
+
+            _jobManager.AddOrUpdate<ProcessOutboxMessageJob>(
+               "Process-OutboxMessage-Job",
+               service => service.Execute(),
+               Cron.Minutely);
         }
    
     }

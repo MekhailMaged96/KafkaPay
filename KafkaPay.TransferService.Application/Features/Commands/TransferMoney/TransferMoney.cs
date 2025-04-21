@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using KafkaPay.Shared.Application.Common.Interfaces;
 using KafkaPay.Shared.Domain.Entities;
 using KafkaPay.Shared.Domain.Enums;
+using KafkaPay.Shared.Domain.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,10 +18,12 @@ namespace KafkaPay.TransferService.Application.Features.Commands.TransferMoney
     public class TransferMoneyCommandHandler : IRequestHandler<TransferMoneyCommand, Guid>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public TransferMoneyCommandHandler(IApplicationDbContext context)
+        public TransferMoneyCommandHandler(IApplicationDbContext context,IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<Guid> Handle(TransferMoneyCommand request, CancellationToken cancellationToken)
@@ -48,6 +52,24 @@ namespace KafkaPay.TransferService.Application.Features.Commands.TransferMoney
             };
 
             _context.TnxTransactions.Add(txn);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+
+            var initiationEvent = new TransactionInitiatedEvent(
+                              txn.Id,
+                              txn.FromAccountId,
+                              txn.ToAccountId,
+                              txn.Amount,
+                              txn.Timestamp);
+
+            var outboxMessage = new OutBoxMessage(
+                typeof(TransactionInitiatedEvent).FullName!,
+                initiationEvent,
+                DateTime.UtcNow);
+
+            _context.OutBoxMessages.Add(outboxMessage);
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return txn.Id;
