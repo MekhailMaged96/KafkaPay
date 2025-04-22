@@ -20,8 +20,6 @@ namespace KafkaPay.Shared.Application.Common.Interfaces
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
         Task<IDbContextTransaction> BeginTransactionAsync();
-        Task CommitTransactionAsync();
-        Task RollbackTransactionAsync();
     }
 
 }

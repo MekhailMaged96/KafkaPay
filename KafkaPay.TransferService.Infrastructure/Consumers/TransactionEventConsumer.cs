@@ -64,6 +64,7 @@ public class TransactionEventConsumer : BackgroundService
                 consumeResult.TopicPartitionOffset);
 
             await ProcessMessageWithScopedServicesAsync(consumeResult, stoppingToken);
+
             kafkaConsumer.Commit(consumeResult);
         }
         catch (ConsumeException ex)

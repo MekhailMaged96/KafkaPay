@@ -17,7 +17,6 @@ namespace KafkaPay.Shared.Infrastructure.Data
 {
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        private IDbContextTransaction _currentTransaction;
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -37,8 +36,7 @@ namespace KafkaPay.Shared.Infrastructure.Data
                   );
         }
       
-      
-
+     
         public DbSet<User> Users => Set<User>();
         public DbSet<Account> Accounts => Set<Account>();
         public DbSet<TnxTransaction> TnxTransactions => Set<TnxTransaction>();
@@ -46,51 +44,10 @@ namespace KafkaPay.Shared.Infrastructure.Data
         public DbSet<OutBoxMessage> OutBoxMessages => Set<OutBoxMessage>();
         public DbSet<OutboxMessageConsumer> OutboxMessageConsumers => Set<OutboxMessageConsumer>();
 
-
-
-
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
            
             return await Database.BeginTransactionAsync();
-        }
-
-        public async Task CommitTransactionAsync()
-        {
-            try
-            {
-                await SaveChangesAsync();
-                _currentTransaction?.Commit();
-            }
-            catch
-            {
-                await RollbackTransactionAsync();
-                throw;
-            }
-            finally
-            {
-                if (_currentTransaction != null)
-                {
-                    await _currentTransaction.DisposeAsync();
-                    _currentTransaction = null;
-                }
-            }
-        }
-
-        public async Task RollbackTransactionAsync()
-        {
-            try
-            {
-                await _currentTransaction?.RollbackAsync();
-            }
-            finally
-            {
-                if (_currentTransaction != null)
-                {
-                    await _currentTransaction.DisposeAsync();
-                    _currentTransaction = null;
-                }
-            }
         }
 
     }
