@@ -2,7 +2,6 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using KafkaPay.BackgroundJobs;
 using KafkaPay.BackgroundJobs.Jobs;
-using KafkaPay.BackgroundJobs.Services;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.Shared.Infrastructure.Backgrounds.Jobs;
@@ -16,8 +15,6 @@ builder.Services.AddHangfire(config =>
           .UseMemoryStorage()); // Replace with SqlServer, Redis in prod
 
 builder.Services.AddHangfireServer();
-
-builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ProcessOutboxMessageJob>();
 builder.AddInfrastructureServices();
 builder.AddApplicationServices();

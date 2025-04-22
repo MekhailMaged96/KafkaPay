@@ -56,6 +56,7 @@ namespace KafkaPay.TransferService.Application.Features.Commands.TransferMoney
             await _context.SaveChangesAsync(cancellationToken);
 
 
+
             var initiationEvent = new TransactionInitiatedEvent(
                               txn.Id,
                               txn.FromAccountId,

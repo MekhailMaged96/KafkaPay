@@ -36,6 +36,8 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
             {
                 foreach (var message in outboxMessages)
                 {
+                     using var transaction = await _dbContext.BeginTransactionAsync();
+
                     try
                     {
                         var assembly = Assembly.Load("KafkaPay.Shared.Domain");
@@ -45,9 +47,6 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 
                         if (messageType == null)
                         {
-
-                            // Optionally log warning: unknown type
-
                             continue;
                         }
 
@@ -58,17 +57,22 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                             // Optionally log: deserialization failed
                             continue;
                         }
+                        message.MarkAsProcessed(DateTime.UtcNow);
+
+                        await _dbContext.SaveChangesAsync();
 
                         await _kafkaProducer.ProduceAsync(KafkaTopics.TransactionTopic, domainEvent);
 
 
-                        message.MarkAsProcessed(DateTime.UtcNow);
-
+                  
+                        await transaction.CommitAsync(); // <-- COMMIT
 
                     }
                     catch (Exception ex)
                     {
+                        await transaction.RollbackAsync();
                         message.MarkAsFailed(ex.Message);
+                        await _dbContext.SaveChangesAsync();
                         // Optionally log the error
                     }
                     finally
@@ -77,7 +81,6 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                     }
                 }
 
-                await _dbContext.SaveChangesAsync();
             }
 
 

@@ -1,9 +1,12 @@
-﻿using Confluent.Kafka;
+﻿using System.Threading;
+using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Interfaces;
 using KafkaPay.Shared.Domain.Constants;
+using KafkaPay.Shared.Domain.Entities;
 using KafkaPay.Shared.Domain.Events;
 using KafkaPay.TransferService.Application.Features.Commands.CompleteTransfer;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,47 +20,80 @@ public class TransactionEventConsumer : BackgroundService
     {
         _serviceScopeFactory = serviceScopeFactory;
     }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override  Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-
-        var kafkaConsumer = scope.ServiceProvider.GetRequiredService<IKafkaConsumer<Ignore, TransactionInitiatedEvent>>();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<TransactionEventConsumer>>();
-
-        kafkaConsumer.Subscribe(_topic);
-
-        try
+        return Task.Factory.StartNew(async ()  =>
         {
-            while (!stoppingToken.IsCancellationRequested)
+            using var consumerScope = _serviceScopeFactory.CreateScope();
+            var kafkaConsumer = consumerScope.ServiceProvider.GetRequiredService<IKafkaConsumer<Ignore, TransactionInitiatedEvent>>();
+            var logger = consumerScope.ServiceProvider.GetRequiredService<ILogger<TransactionEventConsumer>>();
+
+            kafkaConsumer.Subscribe(_topic);
+
+            try
             {
-                try
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    var consumeResult = kafkaConsumer.Consume(stoppingToken);
+                    try
+                    {
+                        var consumeResult = kafkaConsumer.Consume(stoppingToken);
+                        if (consumeResult?.Message == null)
+                            continue;
 
-                    if (consumeResult?.Message == null) continue;
+                        logger.LogInformation("Consumed message from {Offset}", consumeResult.TopicPartitionOffset);
 
-                    logger.LogInformation("Consumed message from {TopicPartitionOffset}", consumeResult.TopicPartitionOffset);
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
-                    var message = consumeResult.Message.Value;
-                    var command = new CompleteTransferCommand(message.TransactionId);
+                        var message = consumeResult.Message.Value;
+                        var consumerName = nameof(TransactionEventConsumer);
 
-                    await mediator.Send(command, stoppingToken);
-                }
-                catch (ConsumeException e)
-                {
-                    logger.LogError($"Error while consuming message: {e.Error.Reason}");
+                        var alreadyHandled = await dbContext.OutboxMessageConsumers
+                            .AnyAsync(x => x.Id == message.TransactionId && x.Name == consumerName, stoppingToken);
+
+                        if (alreadyHandled)
+                        {
+                            logger.LogInformation("Message already processed. Skipping.");
+                            continue;
+                        }
+
+                        await mediator.Send(new CompleteTransferCommand(message.TransactionId), stoppingToken);
+
+                        dbContext.OutboxMessageConsumers.Add(new OutboxMessageConsumer
+                        {
+                            Id = message.TransactionId,
+                            Name = consumerName
+                        });
+
+                        await dbContext.SaveChangesAsync(stoppingToken);
+
+                        kafkaConsumer.Commit(consumeResult);
+
+                    }
+                    catch (ConsumeException ex)
+                    {
+                        logger.LogError(ex, "Kafka consume error: {Reason}", ex.Error.Reason);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Unhandled error in Kafka consumer loop.");
+                        await Task.Delay(1000, stoppingToken); // backoff on error
+                    }
                 }
             }
-        }
-        catch (OperationCanceledException)
-        {
-            logger.LogInformation("Kafka Consumer was cancelled.");
-        }
-        finally
-        {
-            kafkaConsumer.Close();
-        }
+            catch (OperationCanceledException)
+            {
+                logger.LogInformation("Kafka consumer is shutting down.");
+            }
+            finally
+            {
+                kafkaConsumer.Close();
+                logger.LogInformation("Kafka consumer closed.");
+            }
+        }); 
+
+      
     }
+
 }

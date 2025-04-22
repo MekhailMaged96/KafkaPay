@@ -10,7 +10,9 @@ namespace KafkaPay.Shared.Application.Common.Interfaces
     public interface IKafkaConsumer<TKey, TValue>
     {
         void Subscribe(string topic);
+        ConsumeResult<TKey, TValue> Consume(TimeSpan timeSpan);
         ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken);
+        void Commit(ConsumeResult<TKey, TValue> result);
         void Close();
 
     }

@@ -17,7 +17,8 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
             {
                 BootstrapServers = "localhost:9092",
                 GroupId = "background-jobs-consumer-group",
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                EnableAutoCommit = false
             };
 
             _consumer = new ConsumerBuilder<TKey, TValue>(config)
@@ -32,7 +33,19 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
         {
             _consumer.Subscribe(topic);
         }
-
+        public ConsumeResult<TKey, TValue> Consume(TimeSpan timeSpan)
+        {
+            try
+            {
+                
+                return _consumer.Consume(timeSpan);
+            }
+            catch (ConsumeException ex)
+            {
+                _logger.LogError(ex, $"Error consuming message from topic {ex.ConsumerRecord?.Topic}");
+                throw;
+            }
+        }
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken)
         {
             try
@@ -49,6 +62,18 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
         public void Close()
         {
             _consumer.Close();
+        }
+        public void Commit(ConsumeResult<TKey, TValue> result)
+        {
+            try
+            {
+                _consumer.Commit(result);
+            }
+            catch (KafkaException ex)
+            {
+                _logger.LogError(ex, $"Error committing offset for topic {result.Topic}");
+                throw;
+            }
         }
 
         private IDeserializer<TKey> GetKeyDeserializer()

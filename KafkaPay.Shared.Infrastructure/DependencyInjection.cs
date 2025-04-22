@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using KafkaPay.Shared.Infrastructure.Data.Interceptors;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using KafkaPay.Shared.Infrastructure.MessageBrokers;
+using KafkaPay.Shared.Application.Common.Exceptions.Behaviours;
+using MediatR;
 
 namespace KafkaPay.Shared.Infrastructure
 {
@@ -21,6 +23,11 @@ namespace KafkaPay.Shared.Infrastructure
         public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
         {
             var connectionString = builder.Configuration.GetConnectionString("Default");
+
+            builder.Services.AddMediatR(cfg => {
+                cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+                cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+            });
 
             builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
