@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.10.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KafkaPay.Shared.Infrastructure\KafkaPay.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\KafkaPay.TransferService.Application\KafkaPay.TransferService.Application.csproj" />
   </ItemGroup>
 

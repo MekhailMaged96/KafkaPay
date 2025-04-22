@@ -1,9 +1,12 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Interfaces;
 using KafkaPay.Shared.Domain.Constants;
 using KafkaPay.Shared.Domain.Entities;
 using KafkaPay.Shared.Domain.Events;
+using KafkaPay.Shared.Infrastructure.Consumers;
 using KafkaPay.TransferService.Application.Features.Commands.CompleteTransfer;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,52 +14,48 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-public class TransactionEventConsumer : BackgroundService
+public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionInitiatedEvent>
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly string _topic = KafkaTopics.TransactionTopic;
     private const string ConsumerName = nameof(TransactionEventConsumer);
 
-    public TransactionEventConsumer(IServiceScopeFactory serviceScopeFactory)
+    // Constructor with dependency injection
+    public TransactionEventConsumer(IServiceScopeFactory serviceScopeFactory, ConsumerConfig consumerConfig, ILogger<TransactionEventConsumer> logger)
+        : base(consumerConfig, logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        return Task.Run(async () => await ConsumeMessagesAsync(stoppingToken), stoppingToken);
-    }
-
-    private async Task ConsumeMessagesAsync(CancellationToken stoppingToken)
+    // This method runs as part of background service lifecycle
+    public async Task ConsumeMessagesAsync(CancellationToken stoppingToken)
     {
         using var consumerScope = _serviceScopeFactory.CreateScope();
-        var kafkaConsumer = consumerScope.ServiceProvider.GetRequiredService<IKafkaConsumer<Ignore, TransactionInitiatedEvent>>();
         var logger = consumerScope.ServiceProvider.GetRequiredService<ILogger<TransactionEventConsumer>>();
 
-        kafkaConsumer.Subscribe(_topic);
+        Subscribe(_topic);
 
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await ProcessNextMessageAsync(kafkaConsumer, logger, stoppingToken);
+                await ProcessNextMessageAsync(logger, stoppingToken);
             }
         }
         finally
         {
-            kafkaConsumer.Close();
+            Close();
             logger.LogInformation("Kafka consumer closed");
         }
     }
 
     private async Task ProcessNextMessageAsync(
-        IKafkaConsumer<Ignore, TransactionInitiatedEvent> kafkaConsumer,
         ILogger<TransactionEventConsumer> logger,
         CancellationToken stoppingToken)
     {
         try
         {
-            var consumeResult = kafkaConsumer.Consume(stoppingToken);
+            var consumeResult = Consume(stoppingToken);
             if (consumeResult?.Message?.Value == null) return;
 
             logger.LogInformation("Consumed message for Transaction ID: {TransactionId} from {Offset}",
@@ -65,7 +64,7 @@ public class TransactionEventConsumer : BackgroundService
 
             await ProcessMessageWithScopedServicesAsync(consumeResult, stoppingToken);
 
-            kafkaConsumer.Commit(consumeResult);
+           Commit(consumeResult);
         }
         catch (ConsumeException ex)
         {
@@ -91,7 +90,6 @@ public class TransactionEventConsumer : BackgroundService
 
         var message = consumeResult.Message.Value;
         var transactionId = message.TransactionId;
-
 
         if (await IsMessageAlreadyProcessedAsync(dbContext, transactionId, stoppingToken))
         {
