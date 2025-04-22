@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using KafkaPay.Shared.Domain.Entities;
 
-namespace KafkaPay.AccountingService.Application.DTOS
+namespace KafkaPay.Shared.Application.DTOS
 {
     public class AccountDto
     {
@@ -14,5 +14,7 @@ namespace KafkaPay.AccountingService.Application.DTOS
         public string Currency { get; set; }
         public Guid UserId { get; set; }
         public string UserName { get; set; }
+
+        public List<TransactionDTO> Transactions { get; set; } = new List<TransactionDTO>();
     }
 }

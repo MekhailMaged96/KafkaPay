@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KafkaPay.AccountingService.Application.DTOS
+namespace KafkaPay.Shared.Application.DTOS
 {
     public class UserDto
     {

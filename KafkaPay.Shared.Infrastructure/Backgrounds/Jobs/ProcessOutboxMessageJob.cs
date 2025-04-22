@@ -10,7 +10,10 @@ using KafkaPay.Shared.Domain.Constants;
 using KafkaPay.Shared.Domain.Entities;
 using KafkaPay.Shared.Infrastructure.MessageBrokers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
 
 namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 {
@@ -18,11 +21,23 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
     {
         private readonly IApplicationDbContext _dbContext;
         private readonly IKafkaProducer<object> _kafkaProducer;
-
-        public ProcessOutboxMessageJob(IApplicationDbContext dbContext,IKafkaProducer<object> kafkaProducer)
+        private readonly IConfiguration _configuration;
+        private readonly string _topic;
+        private readonly AsyncRetryPolicy _retryPolicy;
+        public ProcessOutboxMessageJob(IApplicationDbContext dbContext, IKafkaProducer<object> kafkaProducer, IConfiguration configuration)
         {
             _dbContext = dbContext;
-           _kafkaProducer = kafkaProducer;
+            _kafkaProducer = kafkaProducer;
+            _configuration = configuration;
+            _topic = _configuration["KafkaSettings:TransactionTopic"] ?? KafkaTopics.TransactionTopic;
+            _retryPolicy = Policy
+                    .Handle<Exception>()
+                    .WaitAndRetryAsync(3, retryAttempt =>
+                        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        onRetry: (exception, timeSpan, retryCount, context) =>
+                        {
+                            Console.WriteLine($"Retry {retryCount} after {timeSpan.TotalSeconds}s due to: {exception.Message}");
+                        });
         }
 
         public async Task Execute()
@@ -33,7 +48,8 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
             {
                 foreach (var message in outboxMessages)
                 {
-                    await ProcessMessageAsync(message);
+                    await _retryPolicy.ExecuteAsync(() => ProcessMessageAsync(message));
+
                 }
 
             }
@@ -59,7 +75,7 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 {
                     message.MarkAsProcessed(DateTime.UtcNow);
                     await _dbContext.SaveChangesAsync();
-                    await _kafkaProducer.ProduceAsync(KafkaTopics.TransactionTopic, domainEvent);
+                    await _kafkaProducer.ProduceAsync(_topic, domainEvent);
                     await transaction.CommitAsync();
                 }
                 else
@@ -74,6 +90,8 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 message.MarkAsFailed(ex.Message);
                 await _dbContext.SaveChangesAsync();
                 await transaction.RollbackAsync();
+
+                throw;
             }
         }
     }

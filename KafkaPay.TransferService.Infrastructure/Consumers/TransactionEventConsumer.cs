@@ -10,6 +10,7 @@ using KafkaPay.Shared.Infrastructure.Consumers;
 using KafkaPay.TransferService.Application.Features.Commands.CompleteTransfer;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,14 +18,16 @@ using Microsoft.Extensions.Logging;
 public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionInitiatedEvent>
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly string _topic = KafkaTopics.TransactionTopic;
+    private readonly IConfiguration _configuration;
+    private readonly string _topic;
     private const string ConsumerName = nameof(TransactionEventConsumer);
 
-    // Constructor with dependency injection
-    public TransactionEventConsumer(IServiceScopeFactory serviceScopeFactory, ConsumerConfig consumerConfig, ILogger<TransactionEventConsumer> logger)
+    public TransactionEventConsumer(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration, ConsumerConfig consumerConfig, ILogger<TransactionEventConsumer> logger)
         : base(consumerConfig, logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
+        _configuration = configuration;
+        _topic = _configuration["KafkaSettings:TransactionTopic"] ?? KafkaTopics.TransactionTopic;
     }
 
     // This method runs as part of background service lifecycle

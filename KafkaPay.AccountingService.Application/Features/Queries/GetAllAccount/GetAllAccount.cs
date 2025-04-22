@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using KafkaPay.AccountingService.Application.DTOS;
 using KafkaPay.Shared.Application.Common.Interfaces;
+using KafkaPay.Shared.Application.DTOS;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

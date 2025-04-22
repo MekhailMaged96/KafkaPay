@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace KafkaPay.Shared.Infrastructure.MessageBrokers
@@ -13,9 +14,9 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
     {
         private readonly IProducer<Null, string> _producer;
 
-        public KafkaProducer()
+        public KafkaProducer(IConfiguration configuration)
         {
-            var config = new ProducerConfig { BootstrapServers = "localhost:9092", };
+            var config = new ProducerConfig { BootstrapServers = configuration["KafkaSettings:BootstrapServers"] };
             _producer = new ProducerBuilder<Null, string>(config).Build();
         }
 

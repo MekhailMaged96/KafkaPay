@@ -1,13 +1,11 @@
 ﻿using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Exceptions.Behaviours;
-using KafkaPay.Shared.Application.Common.Interfaces;
-using KafkaPay.Shared.Infrastructure.MessageBrokers;
 using KafkaPay.TransferService.Infrastructure.Backgrounds;
 using MediatR;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+
 
 namespace KafkaPay.TransferService.Infrastructure
 {
@@ -16,20 +14,33 @@ namespace KafkaPay.TransferService.Infrastructure
         public static void AddTransferInfrastructureServices(this IHostApplicationBuilder builder)
         {
 
+            var configuration = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
 
             builder.Services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
                 cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
             });
+
+            var bootstrapServers = configuration["KafkaSettings:BootstrapServers"];
+            var groupId = configuration["KafkaSettings:GroupId"];
+            var autoOffsetReset = Enum.TryParse(configuration["KafkaSettings:AutoOffsetReset"], out AutoOffsetReset reset)
+                                  ? reset
+                                  : AutoOffsetReset.Earliest;
+            var enableAutoCommit = bool.TryParse(configuration["KafkaSettings:EnableAutoCommit"], out bool autoCommit)
+                                   ? autoCommit
+                                   : false;
+
             builder.Services.AddSingleton(new ConsumerConfig
             {
-                BootstrapServers = "localhost:9092",
-                GroupId = "kafka-consumer-id1",
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoCommit = false
-            }
-            );
+                BootstrapServers = bootstrapServers,
+                GroupId = groupId,
+                AutoOffsetReset = autoOffsetReset,
+                EnableAutoCommit = enableAutoCommit
+            });
+
+
+           
             builder.Services.AddSingleton<TransactionEventConsumer>();
             builder.Services.AddHostedService<TransactionKafkaHostedService>();
 
