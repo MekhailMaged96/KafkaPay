@@ -1,6 +1,7 @@
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.TransferService.Application;
+using KafkaPay.TransferService.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
 builder.AddTransferApplicationServices();
+builder.AddTransferInfrastructureServices();
 
 var app = builder.Build();
 
