@@ -2,6 +2,7 @@ using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.TransferService.Application;
 using KafkaPay.TransferService.Infrastructure;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,15 @@ builder.AddApplicationServices();
 builder.AddInfrastructureServices();
 builder.AddTransferApplicationServices();
 builder.AddTransferInfrastructureServices();
+
+
+Log.Logger = LoggingConfig.Create("TransactionService")
+    .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
+    .MinimumLevel.Error()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 
 var app = builder.Build();
 

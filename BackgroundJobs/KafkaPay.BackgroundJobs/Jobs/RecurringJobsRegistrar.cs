@@ -23,7 +23,7 @@ namespace KafkaPay.BackgroundJobs.Jobs
             _jobManager.AddOrUpdate<ProcessOutboxMessageJob>(
                "Process-OutboxMessage-Job",
                service => service.Execute(),
-               Cron.Minutely);
+               "*/20 * * * * *");
         }
    
     }

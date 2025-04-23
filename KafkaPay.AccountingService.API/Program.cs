@@ -1,6 +1,7 @@
 using KafkaPay.AccountingService.Application;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,14 @@ builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
 builder.AddAccountApplicationServices();
+
+
+Log.Logger = LoggingConfig.Create("AccountingService")
+    .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
+    .MinimumLevel.Error()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 var app = builder.Build();
 

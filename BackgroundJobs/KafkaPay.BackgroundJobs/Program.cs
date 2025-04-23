@@ -5,8 +5,11 @@ using KafkaPay.BackgroundJobs.Jobs;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.Shared.Infrastructure.Backgrounds.Jobs;
+using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+
 builder.Services.AddHostedService<Worker>();
 
 builder.Services.AddHangfire(config =>
@@ -21,6 +24,14 @@ builder.AddApplicationServices();
 
 builder.Services.AddSingleton<IRecurringJobRegistrar, RecurringJobsRegistrar>();
 builder.Services.AddHostedService<Worker>();
+
+builder.Logging.AddSerilog();
+
+Log.Logger = LoggingConfig.Create("BackgroundJobs")
+    .MinimumLevel.Error()
+    .CreateLogger();
+
+
 
 var host = builder.Build();
 
