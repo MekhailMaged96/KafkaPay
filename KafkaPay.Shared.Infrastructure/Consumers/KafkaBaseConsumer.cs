@@ -22,7 +22,6 @@ namespace KafkaPay.Shared.Infrastructure.Consumers
         {
             _logger = logger;
 
-            // Use default bootstrap server if none is provided
             if (string.IsNullOrEmpty(config.BootstrapServers))
             {
                 config.BootstrapServers = "localhost:9092";

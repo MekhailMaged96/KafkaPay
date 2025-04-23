@@ -29,6 +29,7 @@ builder.Logging.AddSerilog();
 
 Log.Logger = LoggingConfig.Create("BackgroundJobs")
     .MinimumLevel.Error()
+    .MinimumLevel.Information()
     .CreateLogger();
 
 

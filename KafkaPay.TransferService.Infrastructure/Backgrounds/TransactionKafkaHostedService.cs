@@ -22,10 +22,10 @@ namespace KafkaPay.TransferService.Infrastructure.Backgrounds
             _transactionEventConsumer = transactionEventConsumer;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Kafka Background Service is starting.");
-            await Task.Run(async () => await _transactionEventConsumer.ConsumeMessagesAsync(stoppingToken));
+             return Task.Run(async () => await _transactionEventConsumer.ConsumeMessagesAsync(stoppingToken));
         }
 
         public override Task StopAsync(CancellationToken cancellationToken)

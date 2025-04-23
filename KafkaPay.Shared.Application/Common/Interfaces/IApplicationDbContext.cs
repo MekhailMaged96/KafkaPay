@@ -16,9 +16,7 @@ namespace KafkaPay.Shared.Application.Common.Interfaces
         public DbSet<TnxTransaction> TnxTransactions { get;  }
         public DbSet<OutBoxMessage> OutBoxMessages { get; }
         public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; }
-
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-
         Task<IDbContextTransaction> BeginTransactionAsync();
     }
 

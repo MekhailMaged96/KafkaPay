@@ -19,6 +19,7 @@ builder.AddAccountApplicationServices();
 Log.Logger = LoggingConfig.Create("AccountingService")
     .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
     .MinimumLevel.Error()
+    .MinimumLevel.Information()
     .CreateLogger();
 
 builder.Host.UseSerilog();

@@ -21,6 +21,7 @@ builder.AddTransferInfrastructureServices();
 Log.Logger = LoggingConfig.Create("TransactionService")
     .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
     .MinimumLevel.Error()
+    .MinimumLevel.Information()
     .CreateLogger();
 
 builder.Host.UseSerilog();

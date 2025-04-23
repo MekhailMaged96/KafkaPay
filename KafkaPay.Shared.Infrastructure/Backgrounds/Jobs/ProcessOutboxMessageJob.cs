@@ -36,29 +36,36 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
             _logger = logger;
 
             _retryPolicy = Policy
-                .Handle<ProduceException<Null, object>>() // Retry on Kafka produce exceptions
-                .Or<Exception>(ex => IsTransientError(ex)) // Extend to other transient errors
-                .WaitAndRetryAsync(3, retryAttempt =>
-                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    onRetry: (exception, timeSpan, retryCount, context) =>
-                    {
-                        _logger.LogWarning(exception, "[RetryPolicy] Retry {RetryCount} after {Delay}s", retryCount, timeSpan.TotalSeconds);
-                    });
-        }
-
+                          .Handle<ProduceException<Null, object>>() 
+                          .Or<KafkaException>(ex => IsTransientError(ex))
+                          .WaitAndRetryAsync(
+                              retryCount: 3,
+                              sleepDurationProvider: retryAttempt =>
+                                  TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), // 2s, 4s, 8s
+                              onRetry: (exception, timeSpan, retryCount, context) =>
+                              {
+                                  _logger.LogError(exception,
+                                      "[RetryPolicy] Retry {RetryCount} after {Delay}s due to: {Message}",
+                                      retryCount, timeSpan.TotalSeconds, exception.Message);
+                              });
+         }
+        
         public async Task Execute()
         {
             var outboxMessages = await GetPendingOutboxMessages();
-
-            foreach (var message in outboxMessages)
+            if (outboxMessages.Any())
             {
-                try
+                foreach (var message in outboxMessages)
                 {
-                    await _retryPolicy.ExecuteAsync(() => ProcessMessageAsync(message));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to process message {MessageId} after all retries", message.Id);
+                    try
+                    {
+                        await _retryPolicy.ExecuteAsync(() => ProcessMessageAsync(message));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to process message {MessageId} after all retries", message.Id);
+                         await MarkMessageAsFailedAsync(message, ex);
+                    }
                 }
             }
         }
@@ -73,44 +80,30 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 
         private async Task ProcessMessageAsync(OutBoxMessage message)
         {
-            using var transaction = await _dbContext.BeginTransactionAsync();
-
             try
             {
-                // Deserialize the message content
                 var messageType = Assembly.Load("KafkaPay.Shared.Domain").GetType(message.Type);
                 if (messageType == null)
-                {
                     throw new InvalidOperationException($"Type {message.Type} not found.");
-                }
 
                 var domainEvent = JsonConvert.DeserializeObject(message.Content, messageType);
                 if (domainEvent == null)
-                {
                     throw new InvalidOperationException("Failed to deserialize message content.");
-                }
-                message.MarkAsProcessed(DateTime.UtcNow);
-                await _dbContext.SaveChangesAsync();
 
-                // Produce to Kafka (retries handled by policy)
                 await _kafkaProducer.ProduceAsync(_topic, domainEvent);
 
-                // Mark as processed only after successful Kafka production
-      
+                using var transaction = await _dbContext.BeginTransactionAsync();
+                message.MarkAsProcessed(DateTime.UtcNow);
+                await _dbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch (Exception ex) when (IsNonRetriableError(ex))
             {
-                // Handle non-retriable errors (e.g., deserialization)
-                await transaction.RollbackAsync();
-                await MarkMessageAsFailedAsync(message, ex);
                 _logger.LogError(ex, "Non-retriable error processing message {MessageId}", message.Id);
             }
             catch (Exception ex)
             {
-                // Retriable errors will be retried by the policy; log and rethrow
-                await transaction.RollbackAsync();
-                _logger.LogWarning(ex, "Retriable error processing message {MessageId}", message.Id);
+                _logger.LogError(ex, "Retriable error processing message {MessageId}", message.Id);
                 throw;
             }
         }
@@ -118,29 +111,30 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
         private async Task MarkMessageAsFailedAsync(OutBoxMessage message, Exception ex)
         {
             using var transaction = await _dbContext.BeginTransactionAsync();
-            try
             {
-                message.MarkAsFailed(ex.Message);
-                await _dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
-            catch (Exception innerEx)
-            {
-                _logger.LogCritical(innerEx, "Failed to mark message {MessageId} as failed", message.Id);
-                await transaction.RollbackAsync();
-                // Consider additional handling for critical failures
+                try
+                {
+                    message.MarkAsFailed(ex.Message);
+                    message.MarkAsProcessed(DateTime.UtcNow);
+
+                    await _dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch (Exception innerEx)
+                {
+                    _logger.LogError(innerEx, "Failed to mark message {MessageId} as failed", message.Id);
+                    await transaction.RollbackAsync();
+                }
             }
         }
 
         private bool IsTransientError(Exception ex)
         {
-            // Example: Network issues, Kafka timeouts, etc.
             return ex is KafkaException || ex is DbUpdateConcurrencyException;
         }
 
         private bool IsNonRetriableError(Exception ex)
         {
-            // Example: Deserialization errors, unknown types
             return ex is JsonSerializationException || ex is InvalidOperationException;
         }
     }

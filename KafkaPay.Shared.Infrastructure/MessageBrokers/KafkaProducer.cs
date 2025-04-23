@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Interfaces;
@@ -15,39 +12,66 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
     {
         private readonly IProducer<Null, string> _producer;
         private readonly ILogger<KafkaProducer<T>> _logger;
-        private readonly Action<IProducer<Null, string>, Error> _errorHandler;
-        public KafkaProducer(IConfiguration configuration,ILogger<KafkaProducer<T>> logger)
+
+        public KafkaProducer(IConfiguration configuration, ILogger<KafkaProducer<T>> logger)
         {
-            var config = new ProducerConfig { BootstrapServers = configuration["KafkaSettings:BootstrapServers"],EnableIdempotence = true };
-       
             _logger = logger;
 
-            _producer = new ProducerBuilder<Null, string>(config)
-                 .SetErrorHandler((producer, error) =>
-                 {
-                     _logger.LogError("Kafka producer error: {ErrorCode} - {ErrorMessage}",
-                                    error.Code, error.Reason);
-                 })
-                 .Build();
+            var config = new ProducerConfig
+            {
+                BootstrapServers = configuration["KafkaSettings:BootstrapServers"],
+                EnableIdempotence = true,
+                MessageTimeoutMs = 5000, // Fail after 5 seconds
+                RequestTimeoutMs = 3000, // Shorter timeout for connection attempts
+            };
 
+            _producer = new ProducerBuilder<Null, string>(config)
+                .SetErrorHandler((producer, error) =>
+                {
+                    _logger.LogError(
+                        "Kafka producer error: {Code} - {Message}",
+                        error.Code,
+                        error.Reason
+                    );
+                })
+                .Build();
         }
 
         public async Task ProduceAsync(string topic, T message)
         {
             try
             {
+                // Force a connection check by fetching metadata
+
                 var serializedMessage = JsonConvert.SerializeObject(message);
+                var deliveryReport = await _producer.ProduceAsync(
+                    topic,
+                    new Message<Null, string> { Value = serializedMessage }
+                );
 
-                var deliveryResult = await _producer.ProduceAsync(topic, new Message<Null, string> { Value = serializedMessage });
-
+                if (deliveryReport.Status == PersistenceStatus.NotPersisted)
+                {
+                    throw new ProduceException<Null, string>(
+                        new Error(ErrorCode.Local_TimedOut, "Message timeout"),
+                        deliveryReport
+                    );
+                }
             }
             catch (ProduceException<Null, string> e)
             {
-                _logger.LogError($"Delivery failed: {e.Error.Reason}");
+                _logger.LogError(e, "Kafka delivery failed: {Reason}", e.Error.Reason);
+                throw;
+            }
+            catch (KafkaException ex)
+            {
+                _logger.LogError(ex, "Kafka connection error: {Message}", ex.Message);
+                throw new Exception("Kafka connection failed", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in Kafka producer");
+                throw;
             }
         }
-
-    
-
     }
 }
