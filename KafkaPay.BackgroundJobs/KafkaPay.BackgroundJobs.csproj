@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-KafkaPay.BackgroundJobs-af790d33-f782-437a-95a1-cdfd54daa4f5</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
+    <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.1" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.18" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KafkaPay.Shared.Application\KafkaPay.Shared.Application.csproj" />
+    <ProjectReference Include="..\KafkaPay.Shared.Domain\KafkaPay.Shared.Domain.csproj" />
+    <ProjectReference Include="..\KafkaPay.Shared.Infrastructure\KafkaPay.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
