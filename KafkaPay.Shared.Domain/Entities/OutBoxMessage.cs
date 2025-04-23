@@ -34,6 +34,6 @@ namespace KafkaPay.Shared.Domain.Entities
         public void MarkAsProcessed(DateTime processedOnUtc) => ProcessedOnUtc = processedOnUtc;
         public void MarkAsFailed(string error) => Error = error;
 
-        public T DeserializeContent<T>() => JsonConvert.DeserializeObject<T>(Content)!;
+        //public T DeserializeContent<T>() => JsonConvert.DeserializeObject<T>(Content)!;
     }
 }

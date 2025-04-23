@@ -59,7 +59,13 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 {
                     try
                     {
+
+
+                        message.MarkAsProcessed(DateTime.UtcNow);
+                        await _dbContext.SaveChangesAsync();
+
                         await _retryPolicy.ExecuteAsync(() => ProcessMessageAsync(message));
+
                     }
                     catch (Exception ex)
                     {
@@ -90,12 +96,11 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 if (domainEvent == null)
                     throw new InvalidOperationException("Failed to deserialize message content.");
 
+
                 await _kafkaProducer.ProduceAsync(_topic, domainEvent);
 
-                using var transaction = await _dbContext.BeginTransactionAsync();
-                message.MarkAsProcessed(DateTime.UtcNow);
-                await _dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
+             
+
             }
             catch (Exception ex) when (IsNonRetriableError(ex))
             {
