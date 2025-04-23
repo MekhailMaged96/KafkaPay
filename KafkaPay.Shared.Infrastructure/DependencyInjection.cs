@@ -30,14 +30,14 @@ namespace KafkaPay.Shared.Infrastructure
             });
 
             builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+            builder.Services.AddScoped<ISaveChangesInterceptor, ConvertDomainEventsToOutBoxMessageInterceptor>();
 
             builder.Services.AddScoped(typeof(IKafkaProducer<>), typeof(KafkaProducer<>));
                 
 
             builder.Services.AddDbContext<ApplicationDbContext>((sp, options) => {
-                var interceptor = sp.GetRequiredService<ISaveChangesInterceptor>();
                 options.UseSqlServer(connectionString);
-                options.AddInterceptors(interceptor);
+                options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
 
             });
 

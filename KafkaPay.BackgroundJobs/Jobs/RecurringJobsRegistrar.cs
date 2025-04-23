@@ -19,12 +19,13 @@ namespace KafkaPay.BackgroundJobs.Jobs
 
         public void RegisterJobs()
         {
-          
+
+
             _jobManager.AddOrUpdate<ProcessOutboxMessageJob>(
                "Process-OutboxMessage-Job",
                service => service.Execute(),
-               "*/5 * * * * *");
+               "*/10 * * * * *");
         }
-   
+
     }
 }

@@ -41,7 +41,6 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
         {
             try
             {
-                // Force a connection check by fetching metadata
 
                 var serializedMessage = JsonConvert.SerializeObject(message);
                 var deliveryReport = await _producer.ProduceAsync(

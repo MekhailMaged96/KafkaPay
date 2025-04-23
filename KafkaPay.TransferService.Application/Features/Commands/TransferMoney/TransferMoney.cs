@@ -56,20 +56,15 @@ namespace KafkaPay.TransferService.Application.Features.Commands.TransferMoney
             await _context.SaveChangesAsync(cancellationToken);
 
 
+            txn.AddDomainEvent(new TransactionInitiEvent()
+            {
+                TransactionId = txn.Id,
+                FromAccountId = txn.FromAccountId,
+                ToAccountId = txn.ToAccountId,
+                Amount = txn.Amount,
+                Timestamp = txn.Timestamp
+            });
 
-            var initiationEvent = new TransactionInitiatedEvent(
-                              txn.Id,
-                              txn.FromAccountId,
-                              txn.ToAccountId,
-                              txn.Amount,
-                              txn.Timestamp);
-
-            var outboxMessage = new OutBoxMessage(
-                typeof(TransactionInitiatedEvent).FullName!,
-                initiationEvent,
-                DateTime.UtcNow);
-
-            _context.OutBoxMessages.Add(outboxMessage);
 
             await _context.SaveChangesAsync(cancellationToken);
 
