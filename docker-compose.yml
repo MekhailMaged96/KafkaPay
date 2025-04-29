@@ -1,16 +1,23 @@
-version: "1"
+version: "3.8"
 
 services:
+
+  # Zookeeper for Kafka
   zookeeper:
     image: wurstmeister/zookeeper:latest
+    container_name: kafka-zookeeper
     ports:
       - "2181:2181"
+    networks:
+      - kafka-network
 
+  # Kafka Broker
   kafka:
     image: wurstmeister/kafka:latest
+    container_name: kafka-broker
     ports:
       - "9092:9092"
-      - "9999"
+      - "9999:9999"
     expose:
       - "9093"
     environment:
@@ -23,9 +30,15 @@ services:
       KAFKA_CREATE_TOPICS: "TransactionTopic:1:1"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-network
 
+  # Kafka Manager (CMAK)
   cmak:
     image: sheepkiller/kafka-manager
+    container_name: kafka-manager
     ports:
       - "9000:9000"
     environment:
@@ -35,3 +48,71 @@ services:
       - kafka
     volumes:
       - ./cmak-conf:/cmak/conf
+    networks:
+      - kafka-network
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elk-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - elk-network
+
+  # Logstash
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: elk-logstash
+    volumes:
+      - ./logstash-config:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000"
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
+    depends_on:
+      - elasticsearch
+    stdin_open: true
+    tty: true
+    networks:
+      - elk-network
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: elk-kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk-network
+
+  # Filebeat
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.4
+    container_name: elk-filebeat
+    user: root
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro 
+      - ./logs:/logs # Make sure your services write logs here
+    command: filebeat -e --strict.perms=false
+    depends_on:
+      - logstash
+    networks:
+      - elk-network
+
+volumes:
+  elasticsearch-data:
+
+networks:
+  kafka-network:
+    driver: bridge
+  elk-network:
+    driver: bridge

@@ -5,9 +5,8 @@ public static class LoggingConfig
 {
     public static LoggerConfiguration Create(string serviceName)
     {
-        // Centralized log path (solution-level "logs" folder)
         var logPath = Path.Combine(
-            Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, // Go up to solution root
+            Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
             "logs",
             serviceName,
             "log-.txt"
@@ -16,11 +15,13 @@ public static class LoggingConfig
         return new LoggerConfiguration()
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Service", serviceName)
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level}] {Service}: {Message}{NewLine}{Exception}")
+            .Enrich.WithProperty("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production")
+            .WriteTo.Console(outputTemplate: "Timestamp:{Timestamp:yyyy-MM-dd HH:mm:ss} Level: {Level:u3} Service: {Service} Message: {Message:lj}{NewLine}{Exception}")
             .WriteTo.File(
                 path: logPath,
+                outputTemplate: "Timestamp:{Timestamp:yyyy-MM-dd HH:mm:ss} Level: {Level:u3} Service: {Service} Message: {Message:lj}{NewLine}{Exception}",
                 rollingInterval: RollingInterval.Day,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Service} {Message}{NewLine}{Exception}"
+                shared: true
             );
     }
 }
