@@ -43,6 +43,7 @@ services:
       - "9000:9000"
     environment:
       ZK_HOSTS: "zookeeper:2181"
+      command: sh -c "rm -f /kafka-manager/RUNNING_PID && /kafka-manager/bin/kafka-manager"
     depends_on:
       - zookeeper
       - kafka
@@ -107,10 +108,23 @@ services:
       - logstash
     networks:
       - elk-network
+  seq:
+    image: datalust/seq:latest
+    container_name: seq-server
+    ports:
+      - "5341:80"         # Web UI (HTTP)
+      - "8081:80"       # Ingestion API (optional remap)
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - seq-data:/data
+    networks:
+      - elk-network 
 
 volumes:
   elasticsearch-data:
-
+  seq-data:
+    
 networks:
   kafka-network:
     driver: bridge

@@ -5,10 +5,17 @@ using KafkaPay.BackgroundJobs.Jobs;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.Shared.Infrastructure.Backgrounds.Jobs;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
 
 builder.Services.AddHostedService<Worker>();
 
@@ -25,13 +32,24 @@ builder.AddApplicationServices();
 builder.Services.AddSingleton<IRecurringJobRegistrar, RecurringJobsRegistrar>();
 builder.Services.AddHostedService<Worker>();
 
-builder.Logging.AddSerilog();
+builder.Services.AddOpenTelemetry()
+                .ConfigureResource(resource =>
+                {
+                    resource.AddService("BackgroundJobs");
+                }).WithTracing(tracing =>
+                {
+                    tracing.AddHttpClientInstrumentation()
+                           .AddAspNetCoreInstrumentation()
+                           .AddConsoleExporter();
 
-Log.Logger = LoggingConfig.Create("BackgroundJobs")
-    .MinimumLevel.Error()
-    .MinimumLevel.Information()
-    .CreateLogger();
+                    tracing.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri("http://localhost:5341/ingest/otlp/v1/traces");
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
 
+                    });
+
+                });
 
 
 var host = builder.Build();

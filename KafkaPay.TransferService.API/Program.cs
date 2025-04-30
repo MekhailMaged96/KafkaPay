@@ -2,6 +2,8 @@ using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.TransferService.Application;
 using KafkaPay.TransferService.Infrastructure;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,14 +19,32 @@ builder.AddInfrastructureServices();
 builder.AddTransferApplicationServices();
 builder.AddTransferInfrastructureServices();
 
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
-Log.Logger = LoggingConfig.Create("TransactionService")
-    .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
-    .MinimumLevel.Error()
-    .MinimumLevel.Information()
-    .CreateLogger();
 
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((context, loggerconfig) =>
+{
+    loggerconfig.ReadFrom.Configuration(context.Configuration);
+});
+
+builder.Services.AddOpenTelemetry()
+                .ConfigureResource(resource =>
+                {
+                    resource.AddService("TransferService.API");
+                }).WithTracing(tracing =>
+                {
+                    tracing.AddHttpClientInstrumentation()
+                           .AddAspNetCoreInstrumentation()
+                           .AddConsoleExporter();
+
+                    tracing.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri("http://localhost:5341/ingest/otlp/v1/traces");
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    });
+
+                });
 
 
 var app = builder.Build();

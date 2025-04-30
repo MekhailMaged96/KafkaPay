@@ -2,6 +2,8 @@ using KafkaPay.AccountingService.Application;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using Serilog;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,18 +13,37 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddOpenTelemetry()
+                .ConfigureResource(resource =>
+                {
+                    resource.AddService("AccountingService.API");
+                }).WithTracing(tracing =>
+                {
+                    tracing.AddHttpClientInstrumentation()
+                           .AddAspNetCoreInstrumentation()
+                           .AddConsoleExporter();
+                    tracing.AddOtlpExporter(options =>
+                      {
+                          options.Endpoint = new Uri("http://localhost:5341/ingest/otlp/v1/traces");
+                          options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                      });
+
+                });
+
+
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
 builder.AddAccountApplicationServices();
 
 
-Log.Logger = LoggingConfig.Create("AccountingService")
-    .ReadFrom.Configuration(builder.Configuration) // Optional: Load appsettings
-    .MinimumLevel.Error()
-    .MinimumLevel.Information()
-    .CreateLogger();
 
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((context, loggerconfig) =>
+{ 
+    loggerconfig.ReadFrom.Configuration(context.Configuration);
+});
+
+
 
 var app = builder.Build();
 

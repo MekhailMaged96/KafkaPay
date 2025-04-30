@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog.Core;
 
 public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionInitiatedEvent>
 {
@@ -28,6 +29,8 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         _serviceScopeFactory = serviceScopeFactory;
         _configuration = configuration;
         _topic = _configuration["KafkaSettings:TransactionTopic"] ?? KafkaTopics.TransactionTopic;
+        logger.LogInformation("TransactionEventConsumer initialized for topic: {Topic}", _topic);
+
     }
 
     // This method runs as part of background service lifecycle
@@ -37,6 +40,7 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         var logger = consumerScope.ServiceProvider.GetRequiredService<ILogger<TransactionEventConsumer>>();
 
         Subscribe(_topic);
+        logger.LogInformation("Subscribed to Kafka topic: {Topic}", _topic);
 
         try
         {
@@ -68,6 +72,9 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
             await ProcessMessageWithScopedServicesAsync(consumeResult, stoppingToken);
 
            Commit(consumeResult);
+
+            logger.LogInformation("Committed offset for Transaction ID: {TransactionId}", consumeResult.Message.Value.TransactionId);
+
         }
         catch (ConsumeException ex)
         {
@@ -101,7 +108,12 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         }
 
         await ProcessTransactionAsync(mediator, transactionId, stoppingToken);
+        logger.LogInformation("Transaction {TransactionId} processed successfully", transactionId);
+
         await RecordProcessedMessageAsync(dbContext, transactionId, stoppingToken);
+
+        logger.LogInformation("Transaction {TransactionId} recorded as processed", transactionId);
+
     }
 
     private async Task<bool> IsMessageAlreadyProcessedAsync(
@@ -118,7 +130,35 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         Guid transactionId,
         CancellationToken cancellationToken)
     {
-        await mediator.Send(new CompleteTransferCommand(transactionId), cancellationToken);
+        using var processingScope = _serviceScopeFactory.CreateScope();
+        var services = processingScope.ServiceProvider;
+
+        var httpClientFactory = services.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient();
+
+        var url = $"https://localhost:7163/api/transfer/complete/{transactionId}";
+        try
+        {
+            var response = await httpClient.PostAsync(url, null, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Transaction {TransactionId} completed successfully via HTTP.", transactionId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to complete transaction {TransactionId}. Status code: {StatusCode}",
+                    transactionId, response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "HTTP request failed for transaction {TransactionId}", transactionId);
+            throw;
+        }
+
+
+        //await mediator.Send(new CompleteTransferCommand(transactionId), cancellationToken);
     }
 
     private async Task RecordProcessedMessageAsync(

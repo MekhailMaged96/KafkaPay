@@ -49,10 +49,12 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                                       retryCount, timeSpan.TotalSeconds, exception.Message);
                               });
          }
-        
+
         public async Task Execute()
         {
             var outboxMessages = await GetPendingOutboxMessages();
+            _logger.LogInformation("Found {MessageCount} pending outbox messages to process", outboxMessages.Count);
+
             if (outboxMessages.Any())
             {
                 foreach (var message in outboxMessages)
@@ -60,19 +62,28 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                     try
                     {
 
+                        _logger.LogInformation("Processing outbox message {MessageId}", message.Id);
 
                         message.MarkAsProcessed(DateTime.UtcNow);
                         await _dbContext.SaveChangesAsync();
 
                         await _retryPolicy.ExecuteAsync(() => ProcessMessageAsync(message));
 
+                        _logger.LogInformation("Successfully processed message {MessageId}", message.Id);
+
+
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Failed to process message {MessageId} after all retries", message.Id);
-                         await MarkMessageAsFailedAsync(message, ex);
+                        await MarkMessageAsFailedAsync(message, ex);
                     }
                 }
+            }
+            else
+            {
+                _logger.LogInformation("No outbox messages found to process");
+
             }
         }
 
@@ -88,6 +99,8 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
         {
             try
             {
+                _logger.LogInformation("Deserializing message {MessageId} of type {MessageType}", message.Id, message.Type);
+
                 var messageType = Assembly.Load("KafkaPay.Shared.Domain").GetType(message.Type);
                 if (messageType == null)
                     throw new InvalidOperationException($"Type {message.Type} not found.");
@@ -96,10 +109,12 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 if (domainEvent == null)
                     throw new InvalidOperationException("Failed to deserialize message content.");
 
+                _logger.LogInformation("Producing message {MessageId} to Kafka topic {Topic}", message.Id, _topic);
 
                 await _kafkaProducer.ProduceAsync(_topic, domainEvent);
 
-             
+                _logger.LogInformation("Produced message {MessageId} to Kafka successfully", message.Id);
+
 
             }
             catch (Exception ex) when (IsNonRetriableError(ex))
@@ -119,11 +134,16 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
             {
                 try
                 {
+                    _logger.LogWarning("Marking message {MessageId} as failed due to error: {Error}", message.Id, ex.Message);
+
                     message.MarkAsFailed(ex.Message);
                     message.MarkAsProcessed(DateTime.UtcNow);
 
                     await _dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();
+
+                    _logger.LogInformation("Marked message {MessageId} as failed and committed transaction", message.Id);
+
                 }
                 catch (Exception innerEx)
                 {
