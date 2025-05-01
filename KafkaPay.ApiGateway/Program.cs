@@ -1,10 +1,8 @@
-using KafkaPay.AccountingService.Application;
-using KafkaPay.Shared.Application;
-using KafkaPay.Shared.Infrastructure;
-using Serilog;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Resources;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
 using OpenTelemetry.Context.Propagation;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,10 +14,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+
+builder.Services.AddOcelot();
+// Ensure this is added
+
 builder.Services.AddOpenTelemetry()
                 .ConfigureResource(resource =>
                 {
-                    resource.AddService("KafkaPay.AccountingService.API");
+                    resource.AddService("KafkaPay.ApiGatway");
                 }).WithTracing(tracing =>
                 {
                     tracing.AddHttpClientInstrumentation()
@@ -28,29 +31,15 @@ builder.Services.AddOpenTelemetry()
                            .AddSource("Kafka.Consume")
                            .AddConsoleExporter();
                     tracing.AddOtlpExporter(options =>
-                      {
-                          options.Endpoint = new Uri("http://localhost:5341/ingest/otlp/v1/traces");
-                          options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                      });
+                    {
+                        options.Endpoint = new Uri("http://localhost:5341/ingest/otlp/v1/traces");
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    });
 
                 });
 Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator(
     new TextMapPropagator[] { new TraceContextPropagator(), new BaggagePropagator() }
 ));
-
-builder.AddApplicationServices();
-builder.AddInfrastructureServices();
-builder.AddAccountApplicationServices();
-
-
-
-builder.Host.UseSerilog((context, loggerconfig) =>
-{ 
-    loggerconfig.ReadFrom.Configuration(context.Configuration);
-});
-
-
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -62,10 +51,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseSerilogRequestLogging();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.UseOcelot().Wait();
 
 app.Run();

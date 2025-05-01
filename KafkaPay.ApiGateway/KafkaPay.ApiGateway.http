@@ -1,0 +1,6 @@
+@KafkaPay.ApiGateway_HostAddress = http://localhost:5147
+
+GET {{KafkaPay.ApiGateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

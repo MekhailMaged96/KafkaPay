@@ -7,6 +7,7 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using KafkaPay.TransferService.Application.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +22,9 @@ builder.AddInfrastructureServices();
 builder.AddTransferApplicationServices();
 builder.AddTransferInfrastructureServices();
 
-builder.Services.AddHttpClient();
-builder.Services.AddHttpContextAccessor();
+
+
+
 
 
 builder.Host.UseSerilog((context, loggerconfig) =>
@@ -53,6 +55,9 @@ builder.Services.AddOpenTelemetry()
 Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator(
     new TextMapPropagator[] { new TraceContextPropagator(), new BaggagePropagator() }
 ));
+
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

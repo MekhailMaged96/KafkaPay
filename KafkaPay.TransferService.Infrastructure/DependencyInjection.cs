@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using KafkaPay.Shared.Application.Common.Exceptions.Behaviours;
+using KafkaPay.TransferService.Application.Handlers;
 using KafkaPay.TransferService.Infrastructure.Backgrounds;
 using MediatR;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,11 @@ namespace KafkaPay.TransferService.Infrastructure
         {
 
             var configuration = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
+
+            builder.Services.AddTransient<TelemetryHandler>();
+
+            builder.Services.AddHttpClient("kafka-client").AddHttpMessageHandler<TelemetryHandler>();
+
 
             builder.Services.AddMediatR(cfg =>
             {

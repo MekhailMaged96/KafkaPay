@@ -1,0 +1,115 @@
+{
+    "GlobalConfiguration": {
+        "BaseUrl": "https://localhost:7156"
+    },
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/account/CreateAccount",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7175
+                }
+            ],
+            "UpstreamPathTemplate": "/account/CreateAccount",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/account/account/{id}",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7175
+                }
+            ],
+            "UpstreamPathTemplate": "/account/account/{id}",
+            "UpstreamHttpMethod": [ "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/account/GetAll",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7175
+                }
+            ],
+            "UpstreamPathTemplate": "/account/GetAll",
+            "UpstreamHttpMethod": [ "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/User/GetAll",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7175
+                }
+            ],
+            "UpstreamPathTemplate": "/user/GetAll",
+            "UpstreamHttpMethod": [ "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/user/CreateUser",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7175
+                }
+            ],
+            "UpstreamPathTemplate": "/user/CreateUser",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/transfer/initiate",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7163
+                }
+            ],
+            "UpstreamPathTemplate": "/transfer/initiate",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/transfer/complete/{transactionId}",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7163
+                }
+            ],
+            "UpstreamPathTemplate": "/transfer/complete/{transactionId}",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/transfer/fail/{transactionId}",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7163
+                }
+            ],
+            "UpstreamPathTemplate": "/transfer/fail/{transactionId}",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/transfer/{accountId}/history",
+            "DownstreamScheme": "https",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7163
+                }
+            ],
+            "UpstreamPathTemplate": "/transfer/{accountId}/history",
+            "UpstreamHttpMethod": [ "GET" ]
+        }
+    ]
+}

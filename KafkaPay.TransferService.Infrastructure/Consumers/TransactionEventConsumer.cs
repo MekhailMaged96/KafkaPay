@@ -107,22 +107,24 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         var transactionId = message.TransactionId;
 
         var parentContext = Propagators.DefaultTextMapPropagator.Extract(
-             default,
-           consumeResult.Message.Headers,
-           (headers, key) =>
-           {
-               var header = headers.LastOrDefault(h => h.Key == key);
-               return header?.GetValueBytes() is byte[] value ? new[] { Encoding.UTF8.GetString(value) } : Array.Empty<string>();
-           });
+                       default,
+                       consumeResult.Message.Headers,
+                       (headers, key) => {
+                           var header = headers.LastOrDefault(h => h.Key == key);
+                           return header?.GetValueBytes() is byte[] value ? new[] { Encoding.UTF8.GetString(value) } : Array.Empty<string>();
+                       });
 
         Baggage.Current = parentContext.Baggage;
 
-        using var activity = ActivitySource.StartActivity("ConsumeKafkaMessage", ActivityKind.Consumer, parentContext.ActivityContext);
-
+        using var activity = ActivitySource.StartActivity(
+            "ConsumeKafkaMessage",
+            ActivityKind.Consumer,
+            parentContext.ActivityContext
+        );
         activity?.SetTag("messaging.kafka.topic", consumeResult.Topic);
         activity?.SetTag("messaging.kafka.partition", consumeResult.Partition.Value);
         activity?.SetTag("messaging.kafka.offset", consumeResult.Offset.Value);
-
+       
 
         if (await IsMessageAlreadyProcessedAsync(dbContext, transactionId, stoppingToken))
         {
@@ -157,9 +159,21 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
         var services = processingScope.ServiceProvider;
 
         var httpClientFactory = services.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient();
+
+        var httpClient = httpClientFactory.CreateClient("kafka-client");
 
         var url = $"https://localhost:7163/api/transfer/complete/{transactionId}";
+        using var activity = ActivitySource.StartActivity("ProcessTransaction HTTP POST");
+
+        // Inject the trace context manually
+        if (activity != null)
+        {
+            Propagators.DefaultTextMapPropagator.Inject(
+                new PropagationContext(activity.Context, Baggage.Current),
+                httpClient.DefaultRequestHeaders,
+                (headers, name, value) => headers.Add(name, value));
+        }
+
         try
         {
             var response = await httpClient.PostAsync(url, null, cancellationToken);
@@ -179,6 +193,7 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
             _logger.LogError(ex, "HTTP request failed for transaction {TransactionId}", transactionId);
             throw;
         }
+
 
 
         //await mediator.Send(new CompleteTransferCommand(transactionId), cancellationToken);

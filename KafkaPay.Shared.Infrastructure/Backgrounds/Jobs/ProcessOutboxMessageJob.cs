@@ -102,53 +102,54 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 
         private async Task ProcessMessageAsync(OutBoxMessage message)
         {
-            using var activity = ActivitySource.StartActivity("SendKafkaMessage", ActivityKind.Producer);
-
-            try
+            using var activity = ActivitySource.StartActivity("ProduceKafkaMessage", ActivityKind.Producer);
             {
-                _logger.LogInformation("Deserializing message {MessageId} of type {MessageType}", message.Id, message.Type);
-           
-                var messageType = Assembly.Load("KafkaPay.Shared.Domain").GetType(message.Type);
-                if (messageType == null)
-                    throw new InvalidOperationException($"Type {message.Type} not found.");
-
-                var domainEvent = JsonConvert.DeserializeObject(message.Content, messageType);
-                if (domainEvent == null)
-                    throw new InvalidOperationException("Failed to deserialize message content.");
-
-                var headers = new Headers();
-                if (activity != null)
+                try
                 {
-                    PropagationContext context = new(activity.Context, Baggage.Current);
-                    Propagators.DefaultTextMapPropagator.Inject(context, headers, (headers, key, value) =>
+                    _logger.LogInformation("Deserializing message {MessageId} of type {MessageType}", message.Id, message.Type);
+
+                    var messageType = Assembly.Load("KafkaPay.Shared.Domain").GetType(message.Type);
+                    if (messageType == null)
+                        throw new InvalidOperationException($"Type {message.Type} not found.");
+
+                    var domainEvent = JsonConvert.DeserializeObject(message.Content, messageType);
+                    if (domainEvent == null)
+                        throw new InvalidOperationException("Failed to deserialize message content.");
+
+                    var headers = new Headers();
+
+                    if (activity != null)
                     {
-                        headers.Add(key, Encoding.UTF8.GetBytes(value));
-                    });
+                        var context = new PropagationContext(activity.Context, Baggage.Current);
+
+                        Propagators.DefaultTextMapPropagator.Inject(context, headers,
+                            (h, k, v) => h.Add(k, Encoding.UTF8.GetBytes(v)));
+                    }
+
+                    _logger.LogInformation("Producing message {MessageId} to Kafka topic {Topic}", message.Id, _topic);
+
+                    await _kafkaProducer.ProduceAsync(_topic, domainEvent, headers);
+
+                    _logger.LogInformation("Produced message {MessageId} to Kafka successfully", message.Id);
+
+                    activity?.SetTag("messaging.kafka.topic", _topic);
+                    activity?.SetTag("messaging.system", "kafka");
+                    activity?.SetTag("message.id", message.Id);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+
                 }
+                catch (Exception ex) when (IsNonRetriableError(ex))
 
-                _logger.LogInformation("Producing message {MessageId} to Kafka topic {Topic}", message.Id, _topic);
-
-                await _kafkaProducer.ProduceAsync(_topic, domainEvent, headers);
-
-                _logger.LogInformation("Produced message {MessageId} to Kafka successfully", message.Id);
-
-                activity?.SetTag("messaging.kafka.topic", _topic);
-                activity?.SetTag("messaging.system", "kafka");
-                activity?.SetTag("message.id", message.Id);
-                activity?.SetStatus(ActivityStatusCode.Ok);
-
-            }
-            catch (Exception ex) when (IsNonRetriableError(ex))
-
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                _logger.LogError(ex, "Non-retriable error processing message {MessageId}", message.Id);
-            }
-            catch (Exception ex)
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                _logger.LogError(ex, "Retriable error processing message {MessageId}", message.Id);
-                throw;
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    _logger.LogError(ex, "Non-retriable error processing message {MessageId}", message.Id);
+                }
+                catch (Exception ex)
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    _logger.LogError(ex, "Retriable error processing message {MessageId}", message.Id);
+                    throw;
+                }
             }
         }
 

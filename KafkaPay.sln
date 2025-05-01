@@ -42,6 +42,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "logstash-config", "logstash
 		logstash-config\logstash.conf = logstash-config\logstash.conf
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ApiGateways", "ApiGateways", "{33A1A023-FD87-4F55-B094-58EDB54ABBA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaPay.ApiGateway", "KafkaPay.ApiGateway\KafkaPay.ApiGateway.csproj", "{942038E4-6B4E-4F05-A0A4-EB0D116A3F17}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +88,10 @@ Global
 		{CE61096B-C35F-5B22-1D8F-48F430F2F418}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE61096B-C35F-5B22-1D8F-48F430F2F418}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE61096B-C35F-5B22-1D8F-48F430F2F418}.Release|Any CPU.Build.0 = Release|Any CPU
+		{942038E4-6B4E-4F05-A0A4-EB0D116A3F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{942038E4-6B4E-4F05-A0A4-EB0D116A3F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{942038E4-6B4E-4F05-A0A4-EB0D116A3F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{942038E4-6B4E-4F05-A0A4-EB0D116A3F17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +109,7 @@ Global
 		{802BECF8-ACE7-6F40-C3E3-8E1859D49CA4} = {A97ECE81-9799-4102-834A-2E9C8FB35B61}
 		{CE61096B-C35F-5B22-1D8F-48F430F2F418} = {2FB09623-5099-4B70-9052-6BE186375E3B}
 		{60296340-EC1E-4506-AA83-B3A002CC5D94} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
+		{942038E4-6B4E-4F05-A0A4-EB0D116A3F17} = {33A1A023-FD87-4F55-B094-58EDB54ABBA1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F588F94-0F42-41CA-8190-30B0D5548C0F}
