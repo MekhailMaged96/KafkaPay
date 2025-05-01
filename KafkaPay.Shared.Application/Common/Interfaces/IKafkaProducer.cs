@@ -9,6 +9,6 @@ namespace KafkaPay.Shared.Application.Common.Interfaces
 {
     public interface IKafkaProducer<T>
     {
-        Task ProduceAsync(string topic, T message);
+        Task ProduceAsync(string topic, T message, Headers headers = null);
     }
 }

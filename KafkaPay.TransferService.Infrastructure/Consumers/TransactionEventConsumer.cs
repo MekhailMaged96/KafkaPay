@@ -15,6 +15,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry;
+using System.Diagnostics;
+using System.Text;
 
 public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionInitiatedEvent>
 {
@@ -22,6 +26,7 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
     private readonly IConfiguration _configuration;
     private readonly string _topic;
     private const string ConsumerName = nameof(TransactionEventConsumer);
+    private static readonly ActivitySource ActivitySource = new("Kafka.Produce");
 
     public TransactionEventConsumer(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration, ConsumerConfig consumerConfig, ILogger<TransactionEventConsumer> logger)
         : base(consumerConfig, logger)
@@ -100,6 +105,24 @@ public class TransactionEventConsumer : KafkaBaseConsumer<Ignore, TransactionIni
 
         var message = consumeResult.Message.Value;
         var transactionId = message.TransactionId;
+
+        var parentContext = Propagators.DefaultTextMapPropagator.Extract(
+             default,
+           consumeResult.Message.Headers,
+           (headers, key) =>
+           {
+               var header = headers.LastOrDefault(h => h.Key == key);
+               return header?.GetValueBytes() is byte[] value ? new[] { Encoding.UTF8.GetString(value) } : Array.Empty<string>();
+           });
+
+        Baggage.Current = parentContext.Baggage;
+
+        using var activity = ActivitySource.StartActivity("ConsumeKafkaMessage", ActivityKind.Consumer, parentContext.ActivityContext);
+
+        activity?.SetTag("messaging.kafka.topic", consumeResult.Topic);
+        activity?.SetTag("messaging.kafka.partition", consumeResult.Partition.Value);
+        activity?.SetTag("messaging.kafka.offset", consumeResult.Offset.Value);
+
 
         if (await IsMessageAlreadyProcessedAsync(dbContext, transactionId, stoppingToken))
         {

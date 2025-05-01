@@ -5,6 +5,8 @@ using KafkaPay.BackgroundJobs.Jobs;
 using KafkaPay.Shared.Application;
 using KafkaPay.Shared.Infrastructure;
 using KafkaPay.Shared.Infrastructure.Backgrounds.Jobs;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -35,11 +37,13 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.AddOpenTelemetry()
                 .ConfigureResource(resource =>
                 {
-                    resource.AddService("BackgroundJobs");
+                    resource.AddService("KafkaPay.TransferService.API");
                 }).WithTracing(tracing =>
                 {
                     tracing.AddHttpClientInstrumentation()
                            .AddAspNetCoreInstrumentation()
+                           .AddSource("Kafka.Produce")
+                           .AddSource("Kafka.Consume")
                            .AddConsoleExporter();
 
                     tracing.AddOtlpExporter(options =>
@@ -50,7 +54,9 @@ builder.Services.AddOpenTelemetry()
                     });
 
                 });
-
+Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator(
+    new TextMapPropagator[] { new TraceContextPropagator(), new BaggagePropagator() }
+));
 
 var host = builder.Build();
 

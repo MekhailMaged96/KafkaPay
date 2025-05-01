@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using KafkaPay.Shared.Infrastructure.MessageBrokers;
 using KafkaPay.Shared.Application.Common.Exceptions.Behaviours;
 using MediatR;
+using System.Diagnostics;
 
 namespace KafkaPay.Shared.Infrastructure
 {
@@ -33,7 +34,8 @@ namespace KafkaPay.Shared.Infrastructure
             builder.Services.AddScoped<ISaveChangesInterceptor, ConvertDomainEventsToOutBoxMessageInterceptor>();
 
             builder.Services.AddScoped(typeof(IKafkaProducer<>), typeof(KafkaProducer<>));
-                
+            builder.Services.AddSingleton(new ActivitySource("Kafka.Producer"));
+            builder.Services.AddSingleton(new ActivitySource("Kafka.Consumer"));
 
             builder.Services.AddDbContext<ApplicationDbContext>((sp, options) => {
                 options.UseSqlServer(connectionString);

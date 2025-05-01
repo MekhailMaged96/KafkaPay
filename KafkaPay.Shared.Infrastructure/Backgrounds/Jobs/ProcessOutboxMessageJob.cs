@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -11,8 +12,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry;
 using Polly;
 using Polly.Retry;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 {
@@ -23,7 +28,7 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
         private readonly string _topic;
         private readonly AsyncRetryPolicy _retryPolicy;
         private readonly ILogger<ProcessOutboxMessageJob> _logger;
-
+        private static readonly ActivitySource ActivitySource = new("Kafka.Produce");
         public ProcessOutboxMessageJob(
             IApplicationDbContext dbContext,
             IKafkaProducer<object> kafkaProducer,
@@ -97,10 +102,12 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
 
         private async Task ProcessMessageAsync(OutBoxMessage message)
         {
+            using var activity = ActivitySource.StartActivity("SendKafkaMessage", ActivityKind.Producer);
+
             try
             {
                 _logger.LogInformation("Deserializing message {MessageId} of type {MessageType}", message.Id, message.Type);
-
+           
                 var messageType = Assembly.Load("KafkaPay.Shared.Domain").GetType(message.Type);
                 if (messageType == null)
                     throw new InvalidOperationException($"Type {message.Type} not found.");
@@ -109,20 +116,37 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 if (domainEvent == null)
                     throw new InvalidOperationException("Failed to deserialize message content.");
 
+                var headers = new Headers();
+                if (activity != null)
+                {
+                    PropagationContext context = new(activity.Context, Baggage.Current);
+                    Propagators.DefaultTextMapPropagator.Inject(context, headers, (headers, key, value) =>
+                    {
+                        headers.Add(key, Encoding.UTF8.GetBytes(value));
+                    });
+                }
+
                 _logger.LogInformation("Producing message {MessageId} to Kafka topic {Topic}", message.Id, _topic);
 
-                await _kafkaProducer.ProduceAsync(_topic, domainEvent);
+                await _kafkaProducer.ProduceAsync(_topic, domainEvent, headers);
 
                 _logger.LogInformation("Produced message {MessageId} to Kafka successfully", message.Id);
 
+                activity?.SetTag("messaging.kafka.topic", _topic);
+                activity?.SetTag("messaging.system", "kafka");
+                activity?.SetTag("message.id", message.Id);
+                activity?.SetStatus(ActivityStatusCode.Ok);
 
             }
             catch (Exception ex) when (IsNonRetriableError(ex))
+
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 _logger.LogError(ex, "Non-retriable error processing message {MessageId}", message.Id);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 _logger.LogError(ex, "Retriable error processing message {MessageId}", message.Id);
                 throw;
             }
@@ -152,6 +176,9 @@ namespace KafkaPay.Shared.Infrastructure.Backgrounds.Jobs
                 }
             }
         }
+
+      
+       
 
         private bool IsTransientError(Exception ex)
         {

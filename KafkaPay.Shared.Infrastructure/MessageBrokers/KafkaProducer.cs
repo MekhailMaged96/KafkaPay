@@ -37,15 +37,16 @@ namespace KafkaPay.Shared.Infrastructure.MessageBrokers
                 .Build();
         }
 
-        public async Task ProduceAsync(string topic, T message)
+        public async Task ProduceAsync(string topic, T message, Headers headers = null)
         {
             try
             {
 
                 var serializedMessage = JsonConvert.SerializeObject(message);
+
                 var deliveryReport = await _producer.ProduceAsync(
                     topic,
-                    new Message<Null, string> { Value = serializedMessage }
+                    new Message<Null, string> { Value = serializedMessage , Headers = headers ?? new Headers()  }
                 );
 
                 if (deliveryReport.Status == PersistenceStatus.NotPersisted)
